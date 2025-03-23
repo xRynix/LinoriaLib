@@ -1561,7 +1561,7 @@ do
                 KeybindsToggleInner.BackgroundColor3 = State and Library.AccentColor or Library.MainColor;
                 KeybindsToggleInner.BorderColor3 = State and Library.AccentColorDark or Library.OutlineColor;
                 KeybindsToggleLabel.TextColor3 = State and Library.AccentColor or Library.FontColor;
-                
+
                 Library.RegistryMap[KeybindsToggleInner].Properties.BackgroundColor3 = State and 'AccentColor' or 'MainColor';
                 Library.RegistryMap[KeybindsToggleInner].Properties.BorderColor3 = State and 'AccentColorDark' or 'OutlineColor';
                 Library.RegistryMap[KeybindsToggleLabel].Properties.TextColor3 = State and 'AccentColor' or 'FontColor';
@@ -5009,6 +5009,8 @@ function Library:CreateWindow(...)
             Parent = TabContainer;
         });
 
+        local TopBarLabelStroke
+        local TopBarHighlight
         local TopBar, TopBarInner, TopBarLabel, TopBarTextLabel; do
             TopBar = Library:Create('Frame', {
                 BackgroundColor3 = Library.BackgroundColor;
@@ -5031,7 +5033,7 @@ function Library:CreateWindow(...)
                 Parent = TopBar;
             });
 
-            local TopBarHighlight = Library:Create('Frame', {
+            TopBarHighlight = Library:Create('Frame', {
                 BackgroundColor3 = Color3.fromRGB(255, 75, 75);
                 BorderSizePixel = 0;
                 Size = UDim2.new(1, 0, 0, 2);
@@ -5054,7 +5056,7 @@ function Library:CreateWindow(...)
                 Parent = TopBarInner;
             });
 
-            local TopBarLabelStroke = Library:ApplyTextStroke(TopBarLabel);
+            TopBarLabelStroke = Library:ApplyTextStroke(TopBarLabel);
             TopBarLabelStroke.Color = Color3.fromRGB(174, 3, 3);
 
             TopBarTextLabel = Library:CreateLabel({
@@ -5207,6 +5209,24 @@ function Library:CreateWindow(...)
 
                 Tab:Resize();
             end;
+
+            TopBar.BorderColor3 = Info.IsNormal == true and Color3.fromRGB(27, 42, 53) or Color3.fromRGB(248, 51, 51)
+            TopBarInner.BackgroundColor3 = Info.IsNormal == true and Library.BackgroundColor or Color3.fromRGB(117, 22, 17)
+            TopBarHighlight.BackgroundColor3 = Info.IsNormal == true and Library.AccentColor or Color3.fromRGB(255, 75, 75)
+             
+            TopBarLabel.TextColor3 = Info.IsNormal == true and Library.FontColor or Color3.fromRGB(255, 55, 55)
+            TopBarLabelStroke.Color = Info.IsNormal == true and Library.Black or Color3.fromRGB(174, 3, 3)
+
+            if not Library.RegistryMap[TopBarInner] then Library:AddToRegistry(TopBarInner, {}) end
+            if not Library.RegistryMap[TopBarHighlight] then Library:AddToRegistry(TopBarHighlight, {}) end
+            if not Library.RegistryMap[TopBarLabel] then Library:AddToRegistry(TopBarLabel, {}) end
+            if not Library.RegistryMap[TopBarLabelStroke] then Library:AddToRegistry(TopBarLabelStroke, {}) end
+
+            Library.RegistryMap[TopBarInner].Properties.BorderColor3 = Info.IsNormal == true and "BackgroundColor" or nil;
+            Library.RegistryMap[TopBarHighlight].Properties.BackgroundColor3 = Info.IsNormal == true and "AccentColor" or nil;
+
+            Library.RegistryMap[TopBarLabel].Properties.TextColor3 = Info.IsNormal == true and "FontColor" or nil;
+            Library.RegistryMap[TopBarLabelStroke].Properties.Color = Info.IsNormal == true and "Black" or nil;
         end;
 
         function Tab:ShowTab()
