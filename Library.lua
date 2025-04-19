@@ -5902,5 +5902,5 @@ Library:GiveSignal(Players.PlayerRemoving:Connect(OnPlayerChange));
 Library:GiveSignal(Teams.ChildAdded:Connect(OnTeamChange));
 Library:GiveSignal(Teams.ChildRemoved:Connect(OnTeamChange));
 
-getgenv().Library = Library
+if getgenv().skip_getgenv_linoria ~= true then getgenv().Library = Library end
 return Library
