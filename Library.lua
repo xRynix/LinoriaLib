@@ -4475,7 +4475,7 @@ do
             TextSize = 14,
             Text = Config.DefaultText,
             TextXAlignment = Enum.TextXAlignment.Left,
-            TextYAlignment = Enum.VerticalAlignment.Center, 
+            TextYAlignment = Enum.TextYAlignment.Center, 
             ZIndex = 6,
             Parent = PairContainer
         });
