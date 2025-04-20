@@ -4423,8 +4423,107 @@ do
         return Depbox;
     end;
 
+    function BaseGroupboxFuncs:AddImageLabelPair(Idx, Info)
+        local Groupbox = self;
+        local Container = Groupbox.Container;
+
+        local Config = {
+            DefaultText = Info.Text or "...",
+            DefaultImage = Info.Image or "",
+            ImageSize = Info.ImageSize or Vector2.new(16, 16),
+            Spacing = Info.Spacing or 4,
+            Visible = if typeof(Info.Visible) == "boolean" then Info.Visible else true,
+            BlankSize = Info.BlankSize or 5
+        }
+
+        local Element = {
+            Type = 'ImageLabelPair',
+            Visible = Config.Visible
+        }
+
+        -- Main container for the pair + layout
+        local PairContainer = Library:Create('Frame', {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, -4, 0, Config.ImageSize.Y), -- Height determined by image size
+            Visible = Config.Visible,
+            ZIndex = 5,
+            Parent = Container
+        })
+
+        local Layout = Library:Create('UIListLayout', {
+            FillDirection = Enum.FillDirection.Horizontal,
+            VerticalAlignment = Enum.VerticalAlignment.Center,
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, Config.Spacing),
+            Parent = PairContainer
+        })
+
+        -- Image Label
+        local ImgLabel = Library:Create('ImageLabel', {
+            BackgroundTransparency = 1,
+            Image = Config.DefaultImage,
+            Size = UDim2.fromOffset(Config.ImageSize.X, Config.ImageSize.Y),
+            ScaleType = Enum.ScaleType.Fit, -- Or Stretch, Slice
+            Visible = (Config.DefaultImage ~= ""),
+            ZIndex = 6,
+            Parent = PairContainer
+        })
+
+        -- Text Label (adapts size based on image)
+        local TxtLabel = Library:CreateLabel({
+            Size = UDim2.new(1, -(Config.ImageSize.X + Config.Spacing), 1, 0),
+            TextSize = 14,
+            Text = Config.DefaultText,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.VerticalAlignment.Center, 
+            ZIndex = 6,
+            Parent = PairContainer
+        });
+
+        Element.Container = PairContainer
+        Element.ImageLabel = ImgLabel
+        Element.TextLabel = TxtLabel
+        Element.Layout = Layout
+
+        function Element:SetText(Text)
+            TxtLabel.Text = Text or ""
+        end
+
+        function Element:SetImage(ImageAssetId)
+            ImageAssetId = ImageAssetId or ""
+            ImgLabel.Image = ImageAssetId
+            ImgLabel.Visible = (ImageAssetId ~= "" and ImageAssetId ~= "N/A")
+            -- Adjust TextLabel size slightly if image appears/disappears
+            local textWidthScale = ImgLabel.Visible and 1 or 0
+            local textWidthOffset = ImgLabel.Visible and -(Config.ImageSize.X + Config.Spacing) or 0
+            TxtLabel.Size = UDim2.new(textWidthScale, textWidthOffset, 1, 0)
+        end
+
+        function Element:SetTextAndImage(Text, ImageAssetId)
+            Element:SetImage(ImageAssetId)
+            Element:SetText(Text)
+        end
+
+        function Element:SetVisible(Visibility)
+            Element.Visible = Visibility
+            PairContainer.Visible = Visibility
+            if Element.Blank then Element.Blank.Visible = Visibility end
+            Groupbox:Resize()
+        end
+
+        Element.Blank = Groupbox:AddBlank(Config.BlankSize, Element.Visible) -- Add blank space after
+        Groupbox:Resize() -- Trigger resize after adding
+
+        -- Store if Idx provided (optional)
+        if Idx then
+            Options[Idx] = Element -- Assuming this should be in Options like others?
+        end
+
+        return Element
+    end
+
     BaseGroupbox.__index = BaseGroupboxFuncs;
-    BaseGroupbox.__namecall = function(Table, Key, ...)
+    BaseGroupbox.__namecall = function(Table, Key, ...) 
         return BaseGroupboxFuncs[Key](...);
     end;
 end;
