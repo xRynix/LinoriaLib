@@ -4,7 +4,7 @@ Forked for personal preferences and features, feel free to use.
 # LinoriaLib
 A Roblox UI library inspired by Splix, BBot and many others.
 
-###### Original repository
+###### Original repositories
 * [violin-suzutsuki/LinoriaLib](https://github.com/violin-suzutsuki/LinoriaLib)
 * [mstudio45/LinoriaLib](https://github.com/mstudio45/LinoriaLib)
 
