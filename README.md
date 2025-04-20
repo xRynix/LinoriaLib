@@ -1,12 +1,12 @@
-> [!IMPORTANT]  
-> This is a maintained fork of LinoriaLib. This is not the original LinoriaLib repository.<br />
-> Changelogs: [Changelogs](CHANGELOGS.md)
+# Note
+Forked for personal preferences and features, feel free to use.
 
 # LinoriaLib
 A Roblox UI library inspired by Splix, BBot and many others.
 
 ###### Original repository
 * [violin-suzutsuki/LinoriaLib](https://github.com/violin-suzutsuki/LinoriaLib)
+* [mstudio45/LinoriaLib](https://github.com/mstudio45/LinoriaLib)
 
 ###### Example Script: 
 * [Example](Example.lua)
