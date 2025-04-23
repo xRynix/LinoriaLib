@@ -5495,10 +5495,10 @@ function Library:CreateWindow(...)
                 Image = 'http://www.roblox.com/asset/?id=6282522798',
                 ImageColor3 = Library.FontColor,
                 Rotation = 90,
-                Position = UDim2.new(1, -4, 0.5, 0),
+                Position = UDim2.new(1, -4, 0, 11),
                 Size = UDim2.new(0, 12, 0, 12),
                 ZIndex = 6,
-                Parent = GroupboxLabel
+                Parent = BoxInner
             });
 
             Library:AddToRegistry(CollapseArrow, {
@@ -5519,16 +5519,25 @@ function Library:CreateWindow(...)
                 Parent = Container;
             });
 
-            function Groupbox:Resize()
+            function Groupbox:Resize(Animate)
                 local Size = 0;
+                local HeaderHeight = (20 * DPIScale) + 2 + 2
 
-                for _, Element in next, Groupbox.Container:GetChildren() do
-                    if (not Element:IsA('UIListLayout')) and Element.Visible then
-                        Size = Size + Element.Size.Y.Offset;
+                if not Groupbox._Collapsed then
+                    for _, Element in next, Groupbox.Container:GetChildren() do
+                        if (not Element:IsA('UIListLayout')) and Element.Visible then
+                            Size = Size + Element.Size.Y.Offset;
+                        end;
                     end;
-                end;
+                end
 
-                BoxOuter.Size = UDim2.new(1, 0, 0, (20 * DPIScale + Size) + 2 + 2);
+                local TargetSize = UDim2.new(1, 0, 0, HeaderHeight + (Groupbox._Collapsed and 0 or Size));
+
+                if Animate then
+                    TweenService:Create(BoxOuter, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = TargetSize }):Play()
+                else
+                    BoxOuter.Size = TargetSize;
+                end
             end;
 
             Groupbox.Container = Container;
@@ -5538,10 +5547,17 @@ function Library:CreateWindow(...)
             Groupbox:Resize();
 
             local function ToggleCollapse()
-                 Groupbox._Collapsed = not Groupbox._Collapsed;
-                 Container.Visible = not Groupbox._Collapsed;
+                 local wasCollapsed = Groupbox._Collapsed
+                 Groupbox._Collapsed = not wasCollapsed;
                  CollapseArrow.Rotation = Groupbox._Collapsed and 0 or 90;
-                 Groupbox:Resize();
+
+                 Groupbox:Resize(true);
+
+                 task.delay(if Groupbox._Collapsed then 0 else 0.1 end, function()
+                    if Container and Groupbox._Collapsed ~= wasCollapsed then
+                        Container.Visible = not Groupbox._Collapsed;
+                    end
+                 end)
             end
 
             GroupboxLabel.InputBegan:Connect(function(Input)
