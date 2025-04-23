@@ -4503,9 +4503,10 @@ do
             Visible = Config.Visible
         }
 
+        -- Main container for the pair + layout
         local PairContainer = Library:Create('Frame', {
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, -4, 0, Config.ImageSize.Y),
+            Size = UDim2.new(1, -4, 0, Config.ImageSize.Y), -- Height determined by image size
             Visible = Config.Visible,
             ZIndex = 5,
             Parent = Container
@@ -4513,21 +4514,24 @@ do
 
         local Layout = Library:Create('UIListLayout', {
             FillDirection = Enum.FillDirection.Horizontal,
+            VerticalAlignment = Enum.VerticalAlignment.Center,
             SortOrder = Enum.SortOrder.LayoutOrder,
             Padding = UDim.new(0, Config.Spacing),
             Parent = PairContainer
         })
 
+        -- Image Label
         local ImgLabel = Library:Create('ImageLabel', {
             BackgroundTransparency = 1,
             Image = Config.DefaultImage,
             Size = UDim2.fromOffset(Config.ImageSize.X, Config.ImageSize.Y),
-            ScaleType = Enum.ScaleType.Fit,
+            ScaleType = Enum.ScaleType.Fit, -- Or Stretch, Slice
             Visible = (Config.DefaultImage ~= ""),
             ZIndex = 6,
             Parent = PairContainer
         })
 
+        -- Text Label (adapts size based on image)
         local TxtLabel = Library:CreateLabel({
             Size = UDim2.new(1, -(Config.ImageSize.X + Config.Spacing), 1, 0),
             TextSize = 14,
@@ -4568,11 +4572,12 @@ do
             Groupbox:Resize()
         end
 
-        Element.Blank = Groupbox:AddBlank(Config.BlankSize, Element.Visible)
-        Groupbox:Resize()
+        Element.Blank = Groupbox:AddBlank(Config.BlankSize, Element.Visible) -- Add blank space after
+        Groupbox:Resize() -- Trigger resize after adding
 
+        -- Store if Idx provided (optional)
         if Idx then
-            Options[Idx] = Element
+            Options[Idx] = Element -- Assuming this should be in Options like others?
         end
 
         return Element
