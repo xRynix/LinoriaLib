@@ -4537,7 +4537,7 @@ do
             TextSize = 14,
             Text = Config.DefaultText,
             TextXAlignment = Enum.TextXAlignment.Left,
-            TextYAlignment = Enum.VerticalAlignment.Center, 
+            TextYAlignment = Enum.TextYAlignment.Center,
             ZIndex = 6,
             Parent = PairContainer
         });
@@ -4555,7 +4555,6 @@ do
             ImageAssetId = ImageAssetId or ""
             ImgLabel.Image = ImageAssetId
             ImgLabel.Visible = (ImageAssetId ~= "" and ImageAssetId ~= "N/A")
-            -- Adjust TextLabel size slightly if image appears/disappears
             local textWidthScale = ImgLabel.Visible and 1 or 0
             local textWidthOffset = ImgLabel.Visible and -(Config.ImageSize.X + Config.Spacing) or 0
             TxtLabel.Size = UDim2.new(textWidthScale, textWidthOffset, 1, 0)
