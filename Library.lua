@@ -2894,18 +2894,23 @@ do
         assert(Info.Text, 'AddInput: Missing `Text` string.')
 
         Info.ClearTextOnFocus = if typeof(Info.ClearTextOnFocus) == "boolean" then Info.ClearTextOnFocus else true;
+        Info.Finished = if typeof(Info.Finished) == "boolean" then Info.Finished else false;
 
         local Textbox = {
             Value = Info.Default or '';
             Numeric = Info.Numeric or false;
-            Finished = Info.Finished or false;
+            MinLength = Info.MinLength; -- New
+            MaxLength = Info.MaxLength; -- New (was implicitly used before)
+            RegexPattern = Info.RegexPattern; -- New
+            Finished = Info.Finished;
             Visible = if typeof(Info.Visible) == "boolean" then Info.Visible else true;
             Disabled = if typeof(Info.Disabled) == "boolean" then Info.Disabled else false;
-        AllowEmpty = if typeof(Info.AllowEmpty) == "boolean" then Info.AllowEmpty else true;
+            AllowEmpty = if typeof(Info.AllowEmpty) == "boolean" then Info.AllowEmpty else true;
             EmptyReset = if typeof(Info.EmptyReset) == "string" then Info.EmptyReset else "---";
             Type = 'Input';
 
             Callback = Info.Callback or function(Value) end;
+            _IsValid = true; -- Internal state for validation visualization
         };
 
         local Groupbox = self;
@@ -3005,6 +3010,47 @@ do
             TextColor3 = 'FontColor';
         });
 
+        local function ValidateInput(currentValue)
+            local isValid = true
+            local value = Trim(currentValue)
+
+            if not Textbox.AllowEmpty and value == "" then
+                isValid = false
+            elseif Textbox.Numeric then
+                if tonumber(value) == nil and value ~= "" then
+                    isValid = false
+                end
+            end
+
+            if Textbox.MinLength and #value < Textbox.MinLength then
+                 isValid = false
+            end
+
+            if Textbox.MaxLength and #value > Textbox.MaxLength then
+                 isValid = false
+            end
+
+            if Textbox.RegexPattern and value ~= "" then
+                local success, _ = pcall(string.match, value, Textbox.RegexPattern)
+                if not success or not _ then
+                    isValid = false
+                end
+            end
+
+            return isValid
+        end
+
+        local function UpdateValidationVisuals(isValid)
+             Textbox._IsValid = isValid
+             if isValid then
+                 Library.RegistryMap[TextBoxInner].Properties.BorderColor3 = 'OutlineColor'
+                 TextBoxInner.BorderColor3 = Library.OutlineColor
+             else
+                 Library.RegistryMap[TextBoxInner].Properties.BorderColor3 = 'RiskColor'
+                 TextBoxInner.BorderColor3 = Library.RiskColor
+             end
+        end
+
         function Textbox:OnChanged(Func)
             Textbox.Changed = Func;
 
@@ -3030,25 +3076,33 @@ do
         end;
 
         function Textbox:SetValue(Text)
-        if not Textbox.AllowEmpty and Trim(Text) == "" then
-        Text = Textbox.EmptyReset;
-        end
+            local originalText = Text
+            local processedText = Trim(Text)
 
-            if Info.MaxLength and #Text > Info.MaxLength then
-                Text = Text:sub(1, Info.MaxLength);
-            end;
-
-            if Textbox.Numeric then
-                if (not tonumber(Text)) and Text:len() > 0 then
-                    Text = Textbox.Value
-                end
+            if not Textbox.AllowEmpty and processedText == "" then
+                processedText = Textbox.EmptyReset;
+                originalText = processedText
             end
 
-            Textbox.Value = Text;
-            Box.Text = Text;
+            local currentIsValid = ValidateInput(processedText)
+            UpdateValidationVisuals(currentIsValid)
 
-            if not Textbox.Disabled then
+            if Textbox.MaxLength and #originalText > Textbox.MaxLength then
+                 originalText = originalText:sub(1, Textbox.MaxLength);
+                 processedText = Trim(originalText)
+                 currentIsValid = ValidateInput(processedText)
+                 UpdateValidationVisuals(currentIsValid)
+            end;
+
+            Textbox.Value = processedText;
+            if Box.Text ~= originalText then
+                 Box.Text = originalText;
+            end
+
+            if not Textbox.Disabled and currentIsValid then
                 Library:SafeCallback(Textbox.Callback, Textbox.Value);
+                Library:SafeCallback(Textbox.Changed, Textbox.Value);
+            elseif Textbox.Disabled then -- Still allow Changed callback if disabled, but not main Callback
                 Library:SafeCallback(Textbox.Changed, Textbox.Value);
             end;
         end;
@@ -3076,13 +3130,21 @@ do
             Box.FocusLost:Connect(function(enter)
                 if not enter then return end
 
+                local isValid = ValidateInput(Trim(Box.Text))
+                UpdateValidationVisuals(isValid)
+
                 Textbox:SetValue(Box.Text);
-                Library:AttemptSave();
+                if isValid then
+                    Library:AttemptSave();
+                end
             end)
         else
             Box:GetPropertyChangedSignal('Text'):Connect(function()
                 Textbox:SetValue(Box.Text);
-                Library:AttemptSave();
+                -- Only attempt save if input is valid and not just finished
+                if Textbox._IsValid then
+                    Library:AttemptSave();
+                end
             end);
         end
 
@@ -4441,10 +4503,9 @@ do
             Visible = Config.Visible
         }
 
-        -- Main container for the pair + layout
         local PairContainer = Library:Create('Frame', {
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, -4, 0, Config.ImageSize.Y), -- Height determined by image size
+            Size = UDim2.new(1, -4, 0, Config.ImageSize.Y),
             Visible = Config.Visible,
             ZIndex = 5,
             Parent = Container
@@ -4452,30 +4513,27 @@ do
 
         local Layout = Library:Create('UIListLayout', {
             FillDirection = Enum.FillDirection.Horizontal,
-            VerticalAlignment = Enum.VerticalAlignment.Center,
             SortOrder = Enum.SortOrder.LayoutOrder,
             Padding = UDim.new(0, Config.Spacing),
             Parent = PairContainer
         })
 
-        -- Image Label
         local ImgLabel = Library:Create('ImageLabel', {
             BackgroundTransparency = 1,
             Image = Config.DefaultImage,
             Size = UDim2.fromOffset(Config.ImageSize.X, Config.ImageSize.Y),
-            ScaleType = Enum.ScaleType.Fit, -- Or Stretch, Slice
+            ScaleType = Enum.ScaleType.Fit,
             Visible = (Config.DefaultImage ~= ""),
             ZIndex = 6,
             Parent = PairContainer
         })
 
-        -- Text Label (adapts size based on image)
         local TxtLabel = Library:CreateLabel({
             Size = UDim2.new(1, -(Config.ImageSize.X + Config.Spacing), 1, 0),
             TextSize = 14,
             Text = Config.DefaultText,
             TextXAlignment = Enum.TextXAlignment.Left,
-            TextYAlignment = Enum.VerticalAlignment.Center, 
+            TextYAlignment = Enum.TextYAlignment.Center,
             ZIndex = 6,
             Parent = PairContainer
         });
@@ -4493,7 +4551,6 @@ do
             ImageAssetId = ImageAssetId or ""
             ImgLabel.Image = ImageAssetId
             ImgLabel.Visible = (ImageAssetId ~= "" and ImageAssetId ~= "N/A")
-            -- Adjust TextLabel size slightly if image appears/disappears
             local textWidthScale = ImgLabel.Visible and 1 or 0
             local textWidthOffset = ImgLabel.Visible and -(Config.ImageSize.X + Config.Spacing) or 0
             TxtLabel.Size = UDim2.new(textWidthScale, textWidthOffset, 1, 0)
@@ -4511,12 +4568,11 @@ do
             Groupbox:Resize()
         end
 
-        Element.Blank = Groupbox:AddBlank(Config.BlankSize, Element.Visible) -- Add blank space after
-        Groupbox:Resize() -- Trigger resize after adding
+        Element.Blank = Groupbox:AddBlank(Config.BlankSize, Element.Visible)
+        Groupbox:Resize()
 
-        -- Store if Idx provided (optional)
         if Idx then
-            Options[Idx] = Element -- Assuming this should be in Options like others?
+            Options[Idx] = Element
         end
 
         return Element
@@ -4528,7 +4584,6 @@ do
     end;
 end;
 
--- < Create other UI elements >
 do
     Library.LeftNotificationArea = Library:Create('Frame', {
         BackgroundTransparency = 1;
@@ -5372,7 +5427,10 @@ function Library:CreateWindow(...)
         end;
 
         function Tab:AddGroupbox(Info)
-            local Groupbox = {};
+            local Groupbox = {
+                _Collapsed = false, -- State for collapsing
+                _ContainerVisibleCache = true -- Cache container visibility for toggling
+            };
 
             local BoxOuter = Library:Create('Frame', {
                 BackgroundColor3 = Library.BackgroundColor;
@@ -5415,13 +5473,29 @@ function Library:CreateWindow(...)
             });
 
             local GroupboxLabel = Library:CreateLabel({
-                Size = UDim2.new(1, 0, 0, 18);
+                Size = UDim2.new(1, -22, 0, 18); -- Make space for the arrow
                 Position = UDim2.new(0, 4, 0, 2);
                 TextSize = 14;
                 Text = Info.Name;
                 TextXAlignment = Enum.TextXAlignment.Left;
                 ZIndex = 5;
                 Parent = BoxInner;
+            });
+
+            local CollapseArrow = Library:Create('ImageLabel', {
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundTransparency = 1,
+                Image = 'http://www.roblox.com/asset/?id=6282522798',
+                ImageColor3 = Library.FontColor,
+                Rotation = 90,
+                Position = UDim2.new(1, -4, 0, 11),
+                Size = UDim2.new(0, 12, 0, 12),
+                ZIndex = 6,
+                Parent = BoxInner
+            });
+
+            Library:AddToRegistry(CollapseArrow, {
+                ImageColor3 = 'FontColor'
             });
 
             local Container = Library:Create('Frame', {
@@ -5438,16 +5512,25 @@ function Library:CreateWindow(...)
                 Parent = Container;
             });
 
-            function Groupbox:Resize()
+            function Groupbox:Resize(Animate)
                 local Size = 0;
+                local HeaderHeight = (20 * DPIScale) + 2 + 2
 
-                for _, Element in next, Groupbox.Container:GetChildren() do
-                    if (not Element:IsA('UIListLayout')) and Element.Visible then
-                        Size = Size + Element.Size.Y.Offset;
+                if not Groupbox._Collapsed then
+                    for _, Element in next, Groupbox.Container:GetChildren() do
+                        if (not Element:IsA('UIListLayout')) and Element.Visible then
+                            Size = Size + Element.Size.Y.Offset;
+                        end;
                     end;
-                end;
+                end
 
-                BoxOuter.Size = UDim2.new(1, 0, 0, (20 * DPIScale + Size) + 2 + 2);
+                local TargetSize = UDim2.new(1, 0, 0, HeaderHeight + (Groupbox._Collapsed and 0 or Size));
+
+                if Animate then
+                    TweenService:Create(BoxOuter, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = TargetSize }):Play()
+                else
+                    BoxOuter.Size = TargetSize;
+                end
             end;
 
             Groupbox.Container = Container;
@@ -5455,6 +5538,26 @@ function Library:CreateWindow(...)
 
             Groupbox:AddBlank(3);
             Groupbox:Resize();
+
+            local function ToggleCollapse()
+                 local wasCollapsed = Groupbox._Collapsed
+                 Groupbox._Collapsed = not wasCollapsed;
+                 CollapseArrow.Rotation = Groupbox._Collapsed and 0 or 90;
+
+                 Groupbox:Resize(true);
+
+                 task.delay(if Groupbox._Collapsed then 0 else 0.1 end, function()
+                    if Container and Groupbox._Collapsed ~= wasCollapsed then
+                        Container.Visible = not Groupbox._Collapsed;
+                    end
+                 end)
+            end
+
+            GroupboxLabel.InputBegan:Connect(function(Input)
+                if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+                     ToggleCollapse()
+                end
+            end)
 
             Tab.Groupboxes[Info.Name] = Groupbox;
 
