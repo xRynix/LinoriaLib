@@ -16,12 +16,49 @@ local GetHUI = gethui or (function() return CoreGui end);
 
 local IsBadDrawingLib = false;
 
-local ScreenGui = Instance.new('ScreenGui');
-pcall(ProtectGui, ScreenGui);
+local function SafeParentUI(Instance: Instance, Parent: Instance | () -> Instance)
+    if not pcall(function()
+        local DestinationParent
+        if typeof(Parent) == "function" then
+            DestinationParent = Parent()
+        else
+            DestinationParent = Parent
+        end
 
+        Instance.Parent = DestinationParent
+    end) then
+        Instance.Parent = LocalPlayer:WaitForChild("PlayerGui", math.huge)
+    end
+end
+
+local function ParentUI(UI: Instance, SkipHiddenUI: boolean?)
+    if SkipHiddenUI then
+        SafeParentUI(UI, CoreGui)
+        return
+    end
+
+    pcall(ProtectGui, UI)
+    SafeParentUI(UI, GetHUI)
+end
+
+local ScreenGui = Instance.new('ScreenGui');
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global;
-local Parented = pcall(function() ScreenGui.Parent = GetHUI(); end);
-if not Parented then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui", 9e9) end;
+ScreenGui.DisplayOrder = 999;
+ScreenGui.ResetOnSpawn = false;
+ParentUI(ScreenGui);
+
+local ModalScreenGui = Instance.new("ScreenGui");
+ModalScreenGui.DisplayOrder = 999;
+ModalScreenGui.ResetOnSpawn = false;
+ParentUI(ModalScreenGui, true);
+
+local ModalElement = Instance.new("TextButton");
+ModalElement.BackgroundTransparency = 1
+ModalElement.Modal = false
+ModalElement.Size = UDim2.fromScale(0, 0)
+ModalElement.Text = ""
+ModalElement.ZIndex = -999
+ModalElement.Parent = ModalScreenGui
 
 --[[
     You can access Toggles & Options through (I'm planning to remove **a** option):
@@ -766,8 +803,10 @@ function Library:Unload()
         Library:SafeCallback(UnloadCallback)
     end
 
-    getgenv().Linoria = nil
     ScreenGui:Destroy()
+    ModalScreenGui:Destroy()
+    Library.Unloaded = true
+    getgenv().Linoria = nil
 end
 
 function Library:OnUnload(Callback)
@@ -5590,15 +5629,6 @@ function Library:CreateWindow(...)
         return Tab;
     end;
 
-    local ModalElement = Library:Create('TextButton', {
-        BackgroundTransparency = 1;
-        Size = UDim2.new(0, 0, 0, 0);
-        Visible = true;
-        Text = '';
-        Modal = false;
-        Parent = ScreenGui;
-    });
-
     local TransparencyCache = {};
     local Toggled = false;
     local Fading = false;
@@ -5610,6 +5640,7 @@ function Library:CreateWindow(...)
         local FadeTime = Config.MenuFadeTime;
         Fading = true;
         Toggled = (not Toggled);
+
         Library.Toggled = Toggled;
         ModalElement.Modal = Toggled;
 
