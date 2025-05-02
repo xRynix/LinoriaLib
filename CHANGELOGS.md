@@ -1,3 +1,9 @@
+### 27.4.2025
+```diff
++ Fixed an issue where clicking on the UI would click on in-game UI
++ You can now move the UI in first person
+```
+
 ### 10.3.2025
 ```diff
 + Callback (OnChanged) in ColorPickers now return the color and transparency (PR #31 - ty RectangularObject)
