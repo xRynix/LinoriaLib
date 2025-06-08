@@ -4480,10 +4480,9 @@ do
             Visible = Config.Visible
         }
 
-        -- Main container for the pair + layout
         local PairContainer = Library:Create('Frame', {
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, -4, 0, Config.ImageSize.Y), -- Height determined by image size
+            Size = UDim2.new(1, -4, 0, Config.ImageSize.Y),
             Visible = Config.Visible,
             ZIndex = 5,
             Parent = Container
@@ -4497,7 +4496,6 @@ do
             Parent = PairContainer
         })
 
-        -- Image Label
         local ImgLabel = Library:Create('ImageLabel', {
             BackgroundTransparency = 1,
             Image = Config.DefaultImage,
@@ -4508,7 +4506,6 @@ do
             Parent = PairContainer
         })
 
-        -- Text Label (adapts size based on image)
         local TxtLabel = Library:CreateLabel({
             Size = UDim2.new(1, -(Config.ImageSize.X + Config.Spacing), 1, 0),
             TextSize = 14,
@@ -4532,7 +4529,6 @@ do
             ImageAssetId = ImageAssetId or ""
             ImgLabel.Image = ImageAssetId
             ImgLabel.Visible = (ImageAssetId ~= "" and ImageAssetId ~= "N/A")
-            -- Adjust TextLabel size slightly if image appears/disappears
             local textWidthScale = ImgLabel.Visible and 1 or 0
             local textWidthOffset = ImgLabel.Visible and -(Config.ImageSize.X + Config.Spacing) or 0
             TxtLabel.Size = UDim2.new(textWidthScale, textWidthOffset, 1, 0)
@@ -4550,12 +4546,11 @@ do
             Groupbox:Resize()
         end
 
-        Element.Blank = Groupbox:AddBlank(Config.BlankSize, Element.Visible) -- Add blank space after
-        Groupbox:Resize() -- Trigger resize after adding
+        Element.Blank = Groupbox:AddBlank(Config.BlankSize, Element.Visible)
+        Groupbox:Resize()
 
-        -- Store if Idx provided (optional)
         if Idx then
-            Options[Idx] = Element -- Assuming this should be in Options like others?
+            Options[Idx] = Element
         end
 
         return Element
@@ -4567,7 +4562,6 @@ do
     end;
 end;
 
--- < Create other UI elements >
 do
     Library.LeftNotificationArea = Library:Create('Frame', {
         BackgroundTransparency = 1;
