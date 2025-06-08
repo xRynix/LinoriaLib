@@ -4500,7 +4500,7 @@ do
             BackgroundTransparency = 1,
             Image = Config.DefaultImage,
             Size = UDim2.fromOffset(Config.ImageSize.X, Config.ImageSize.Y),
-            ScaleType = Enum.ScaleType.Fit, -- Or Stretch, Slice
+            ScaleType = Enum.ScaleType.Fit,
             Visible = (Config.DefaultImage ~= ""),
             ZIndex = 6,
             Parent = PairContainer
